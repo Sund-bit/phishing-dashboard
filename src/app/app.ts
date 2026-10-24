@@ -1,5 +1,5 @@
 ﻿
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 
 type CsvRow = Record<string, string>;
 
@@ -14,6 +14,8 @@ export class App implements OnInit {
   splits: CsvRow[] = [];
   loading = true;
   error = '';
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   async ngOnInit(): Promise<void> {
     console.log('Dashboard initialized');
@@ -32,10 +34,16 @@ export class App implements OnInit {
         throw new Error(`CSV request failed: ${a.status}, ${b.status}`);
       }
 
-      const [csvA, csvB] = await Promise.all([a.text(), b.text()]);
+      const [csvA, csvB] = await Promise.all([
+        a.text(),
+        b.text()
+      ]);
 
       this.models = this.parseCsv(csvA);
       this.splits = this.parseCsv(csvB);
+
+      console.log('Parsed models:', this.models);
+      console.log('Parsed splits:', this.splits);
 
       if (!this.models.length || !this.splits.length) {
         throw new Error('CSV files contain no data rows');
@@ -45,7 +53,13 @@ export class App implements OnInit {
       this.error = 'Could not load research results. Please refresh the page.';
     } finally {
       this.loading = false;
-      console.log('Dashboard loading finished');
+      this.cdr.detectChanges();
+      console.log('Dashboard loading finished', {
+        loading: this.loading,
+        models: this.models.length,
+        splits: this.splits.length,
+        error: this.error
+      });
     }
   }
 
@@ -58,9 +72,11 @@ export class App implements OnInit {
     return lines.slice(1).filter(x => x.trim()).map(line => {
       const values = line.split(',');
       const row: CsvRow = {};
+
       headers.forEach((header, i) => {
         row[header] = (values[i] ?? '').trim();
       });
+
       return row;
     });
   }
@@ -70,7 +86,9 @@ export class App implements OnInit {
     if (!key) return '—';
 
     const value = Number(row[key]);
-    return Number.isFinite(value) ? (value * 100).toFixed(2) + '%' : row[key];
+    return Number.isFinite(value)
+      ? (value * 100).toFixed(2) + '%'
+      : row[key];
   }
 
   modelName(row: CsvRow): string {

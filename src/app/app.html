@@ -1,8 +1,12 @@
-﻿<div class="dashboard">
+﻿
+<div class="dashboard">
   <header class="topbar">
     <a class="brand" href="./">
       <span class="brand-icon">LP</span>
-      <span><strong>LegitPhish</strong><small>Research & Analytics</small></span>
+      <span>
+        <strong>LegitPhish</strong>
+        <small>Research &amp; Analytics</small>
+      </span>
     </a>
     <span class="status"><i></i> Experiment Results</span>
   </header>
@@ -11,8 +15,17 @@
     <section class="hero">
       <p class="eyebrow">MACHINE LEARNING / URL SECURITY</p>
       <h1>Phishing Detection<br><span>Performance Dashboard</span></h1>
-      <p class="intro">An experimental evaluation of Random Forest and Gradient Boosting, with separate train, validation and test results from the research workflow.</p>
-      <div class="hero-tags"><span>Random Forest</span><span>Gradient Boosting</span><span>Model Evaluation</span></div>
+      <p class="intro">
+        An experimental evaluation of machine-learning classifiers for URL
+        phishing detection, with model metrics and separate train, validation
+        and test results from the research workflow.
+      </p>
+      <div class="hero-tags">
+        @for (model of models; track model['Model']) {
+          <span>{{ modelName(model) }}</span>
+        }
+        <span>Model Evaluation</span>
+      </div>
     </section>
 
     @if (loading) {
@@ -24,9 +37,13 @@
     }
 
     @if (!loading && !error) {
+      <!-- 01: Model cards -->
       <section class="section">
         <div class="section-heading">
-          <div><p class="eyebrow">01 / MODEL EVALUATION</p><h2>Two-model comparison</h2></div>
+          <div>
+            <p class="eyebrow">01 / MODEL EVALUATION</p>
+            <h2>Model comparison</h2>
+          </div>
           <p class="source">Source: two_model_metrics.csv</p>
         </div>
 
@@ -35,19 +52,44 @@
             <article class="model-card">
               <p class="card-label">CLASSIFIER</p>
               <h3>{{ modelName(model) }}</h3>
+
               <div class="primary-metric">
                 <span>Accuracy</span>
                 <strong>{{ metric(model, 'Accuracy') }}</strong>
-                <div class="progress"><span [style.width.%]="number(model, 'Accuracy')"></span></div>
+                <div class="progress">
+                  <span
+                    [style.width.%]="barValue(model, ['Accuracy'])">
+                  </span>
+                </div>
               </div>
+
               <div class="metric-grid">
-                <div><span>Precision</span><strong>{{ metric(model, 'Precision') }}</strong></div>
-                <div><span>Recall</span><strong>{{ metric(model, 'Recall') }}</strong></div>
-                <div><span>F1-score</span><strong>{{ metric(model, 'F1') }}</strong></div>
-                <div><span>ROC-AUC</span><strong>{{ metric(model, 'ROC-AUC') }}</strong></div>
-                <div><span>MCC</span><strong>{{ metric(model, 'MCC') }}</strong></div>
-                <div><span>Specificity</span><strong>{{ metric(model, 'Specificity') }}</strong></div>
+                <div>
+                  <span>Precision</span>
+                  <strong>{{ metric(model, 'Precision', 'Precision_phishing') }}</strong>
+                </div>
+                <div>
+                  <span>Recall</span>
+                  <strong>{{ metric(model, 'Recall', 'Recall_phishing') }}</strong>
+                </div>
+                <div>
+                  <span>F1-score</span>
+                  <strong>{{ metric(model, 'F1', 'F1_phishing') }}</strong>
+                </div>
+                <div>
+                  <span>ROC-AUC</span>
+                  <strong>{{ metric(model, 'ROC-AUC', 'ROC_AUC', 'ROC_AUC_phishing') }}</strong>
+                </div>
+                <div>
+                  <span>MCC</span>
+                  <strong>{{ metric(model, 'MCC') }}</strong>
+                </div>
+                <div>
+                  <span>Specificity</span>
+                  <strong>{{ metric(model, 'Specificity') }}</strong>
+                </div>
               </div>
+
               <div class="counts">
                 <span>TP <b>{{ model['TP'] || '—' }}</b></span>
                 <span>TN <b>{{ model['TN'] || '—' }}</b></span>
@@ -59,20 +101,130 @@
         </div>
       </section>
 
+      <!-- 02: Main metric graph -->
       <section class="section">
         <div class="section-heading">
-          <div><p class="eyebrow">02 / EXPERIMENT WORKFLOW</p><h2>Train, validation & test</h2></div>
+          <div>
+            <p class="eyebrow">02 / VISUAL ANALYTICS</p>
+            <h2>Performance comparison</h2>
+          </div>
+          <p class="source">Higher values indicate better scores for these metrics</p>
+        </div>
+
+        <div class="chart-panel">
+          <div class="chart-title">
+            <div>
+              <h3>Model metrics at a glance</h3>
+              <p>Compare the reported scores across classifiers.</p>
+            </div>
+          </div>
+
+          <div class="metric-chart">
+            @for (item of chartMetrics; track item.label) {
+              <div class="chart-row">
+                <div class="chart-label">
+                  <strong>{{ item.label }}</strong>
+                  @for (model of models; track model['Model']) {
+                    <span class="chart-score">
+                      {{ modelName(model) }}:
+                      {{ chartMetric(model, item.keys) }}
+                    </span>
+                  }
+                </div>
+
+                <div class="bar-stack">
+                  @for (model of models; track model['Model']; let i = $index) {
+                    <div class="bar-line">
+                      @if (hasMetric(model, item.keys)) {
+                        <span
+                          class="bar"
+                          [class.bar-secondary]="i % 2 === 1"
+                          [style.width.%]="barValue(model, item.keys)">
+                        </span>
+                      } @else {
+                        <span class="missing-bar"></span>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="chart-legend">
+            @for (model of models; track model['Model']; let i = $index) {
+              <span>
+                <i [class.legend-secondary]="i % 2 === 1"></i>
+                {{ modelName(model) }}
+              </span>
+            }
+          </div>
+
+          <p class="footnote">
+            Scores are loaded from the experiment CSV. Missing metrics are
+            omitted rather than treated as zero.
+          </p>
+        </div>
+      </section>
+
+      <!-- 03: Train, validation and test -->
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">03 / EXPERIMENT WORKFLOW</p>
+            <h2>Train, validation &amp; test</h2>
+          </div>
           <p class="source">Source: metrics_all_splits.csv</p>
+        </div>
+
+        <div class="split-chart-grid">
+          @for (item of splitMetrics; track item.label) {
+            <article class="split-chart-card">
+              <h3>{{ item.label }}</h3>
+              <p class="chart-description">
+                Comparison across available experiment splits.
+              </p>
+
+              @for (row of splits; track row['Model'] + row['Split']) {
+                @if (hasMetric(row, item.keys)) {
+                  <div class="split-bar-row">
+                    <div class="split-bar-heading">
+                      <span>{{ row['Model'] }}</span>
+                      <span class="split-pill">{{ splitName(row) }}</span>
+                      <strong>{{ chartMetric(row, item.keys) }}</strong>
+                    </div>
+                    <div class="bar-line">
+                      <span
+                        class="bar"
+                        [class.bar-secondary]="splitTone(row['Split'])"
+                        [style.width.%]="barValue(row, item.keys)">
+                      </span>
+                    </div>
+                  </div>
+                }
+              }
+            </article>
+          }
         </div>
 
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Model</th><th>Split</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1-score</th><th>ROC-AUC</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Split</th>
+                <th>Accuracy</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-score</th>
+                <th>ROC-AUC</th>
+              </tr>
+            </thead>
             <tbody>
               @for (row of splits; track row['Model'] + row['Split']) {
                 <tr>
                   <td class="model-cell">{{ row['Model'] }}</td>
-                  <td><span class="split-pill">{{ row['Split'] }}</span></td>
+                  <td><span class="split-pill">{{ splitName(row) }}</span></td>
                   <td>{{ metric(row, 'Accuracy') }}</td>
                   <td>{{ metric(row, 'Precision_phishing', 'Precision') }}</td>
                   <td>{{ metric(row, 'Recall_phishing', 'Recall') }}</td>
@@ -83,20 +235,50 @@
             </tbody>
           </table>
         </div>
-        <p class="footnote">These split-level results are shown separately from the two-model comparison because they belong to a different experiment output.</p>
+
+        <p class="footnote">
+          Split-level results are displayed separately from the main model
+          comparison because they come from a different experiment output.
+        </p>
       </section>
 
+      <!-- 04: Interpretation -->
       <section class="section insight">
-        <p class="eyebrow">03 / INTERPRETATION</p>
-        <h2>What the results suggest</h2>
+        <p class="eyebrow">04 / INTERPRETATION</p>
+        <h2>Reading the results</h2>
+
         <div class="insight-grid">
-          <article><span class="insight-number">01</span><h3>Overall performance</h3><p>Gradient Boosting has higher accuracy and precision in the two-model evaluation.</p></article>
-          <article><span class="insight-number">02</span><h3>Phishing recall</h3><p>Random Forest has higher recall in this evaluation, identifying a larger proportion of phishing examples.</p></article>
-          <article><span class="insight-number">03</span><h3>Evaluate carefully</h3><p>Model selection should consider false negatives, false positives and the intended deployment use case.</p></article>
+          <article>
+            <span class="insight-number">01</span>
+            <h3>Overall performance</h3>
+            <p>
+              Compare accuracy alongside precision, recall and F1-score to
+              understand each model's performance.
+            </p>
+          </article>
+          <article>
+            <span class="insight-number">02</span>
+            <h3>Phishing recall</h3>
+            <p>
+              Higher phishing recall means fewer phishing examples are missed,
+              provided the positive class is correctly mapped.
+            </p>
+          </article>
+          <article>
+            <span class="insight-number">03</span>
+            <h3>Evaluate carefully</h3>
+            <p>
+              False negatives, false positives, data leakage and test-set
+              performance all matter when selecting a classifier.
+            </p>
+          </article>
         </div>
       </section>
     }
   </main>
 
-  <footer><span>LegitPhish · Research Dashboard</span><span>Experimental results, not a live URL scanner</span></footer>
+  <footer>
+    <span>LegitPhish · Research Dashboard</span>
+    <span>Experimental results, not a live URL scanner</span>
+  </footer>
 </div>

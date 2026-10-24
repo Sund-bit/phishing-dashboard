@@ -1,3 +1,4 @@
+
 name: Angular CI CD
 
 on:
@@ -36,10 +37,10 @@ jobs:
       - name: Build Angular application
         run: npm run build -- --base-href "/phishing-dashboard/"
 
-       - name: Upload Pages artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist/phishing-dashboard
+          path: dist/phishing-dashboard/browser
 
   deploy:
     name: CD - Deploy to GitHub Pages

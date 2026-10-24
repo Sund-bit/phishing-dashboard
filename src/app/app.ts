@@ -1,4 +1,5 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿
+import { Component, OnInit } from '@angular/core';
 
 type CsvRow = Record<string, string>;
 
@@ -15,26 +16,36 @@ export class App implements OnInit {
   error = '';
 
   async ngOnInit(): Promise<void> {
+    console.log('Dashboard initialized');
+
     try {
+      const base = document.querySelector('base')?.href ?? window.location.href;
+
       const [a, b] = await Promise.all([
-        fetch('research-data/two_model_metrics.csv'),
-        fetch('research-data/metrics_all_splits.csv')
+        fetch(new URL('research-data/two_model_metrics.csv', base)),
+        fetch(new URL('research-data/metrics_all_splits.csv', base))
       ]);
 
+      console.log('CSV response statuses:', a.status, b.status);
+
       if (!a.ok || !b.ok) {
-        throw new Error('CSV files not found');
+        throw new Error(`CSV request failed: ${a.status}, ${b.status}`);
       }
 
-      this.models = this.parseCsv(await a.text());
-      this.splits = this.parseCsv(await b.text());
+      const [csvA, csvB] = await Promise.all([a.text(), b.text()]);
+
+      this.models = this.parseCsv(csvA);
+      this.splits = this.parseCsv(csvB);
 
       if (!this.models.length || !this.splits.length) {
-        throw new Error('CSV files contain no data');
+        throw new Error('CSV files contain no data rows');
       }
-    } catch {
-      this.error = 'Could not load results. Check public/research-data and CSV filenames.';
+    } catch (e) {
+      console.error('Dashboard loading error:', e);
+      this.error = 'Could not load research results. Please refresh the page.';
     } finally {
       this.loading = false;
+      console.log('Dashboard loading finished');
     }
   }
 
@@ -47,7 +58,9 @@ export class App implements OnInit {
     return lines.slice(1).filter(x => x.trim()).map(line => {
       const values = line.split(',');
       const row: CsvRow = {};
-      headers.forEach((header, i) => row[header] = (values[i] ?? '').trim());
+      headers.forEach((header, i) => {
+        row[header] = (values[i] ?? '').trim();
+      });
       return row;
     });
   }
@@ -55,6 +68,7 @@ export class App implements OnInit {
   metric(row: CsvRow, ...keys: string[]): string {
     const key = keys.find(k => row[k] !== undefined && row[k] !== '');
     if (!key) return '—';
+
     const value = Number(row[key]);
     return Number.isFinite(value) ? (value * 100).toFixed(2) + '%' : row[key];
   }

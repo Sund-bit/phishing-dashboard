@@ -1,5 +1,4 @@
-﻿
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 
 type CsvRow = Record<string, string>;
 
@@ -53,13 +52,13 @@ export class App implements OnInit {
       this.error = 'Could not load research results. Please refresh the page.';
     } finally {
       this.loading = false;
-      this.cdr.detectChanges();
-      console.log('Dashboard loading finished', {
-        loading: this.loading,
-        models: this.models.length,
-        splits: this.splits.length,
-        error: this.error
-      });
+this.cdr.detectChanges();
+console.log('Dashboard loading finished', {
+  loading: this.loading,
+  models: this.models.length,
+  splits: this.splits.length,
+  error: this.error
+});
     }
   }
 

@@ -1,0 +1,2 @@
+Novelty:
+I will extend the existing dataset by adding new features to identify phishing URLs that use IP addresses instead of domain names, fake login patterns, and misleading subdomains. These features will help the model detect suspicious URLs that may not be adequately represented in the original dataset. I will evaluate the improved dataset using an XGBoost model to measure its phishing detection performance.

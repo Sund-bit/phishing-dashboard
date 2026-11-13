@@ -1,0 +1,24 @@
+LEGITPHISH - REPRODUCIBLE EXPERIMENT REPORT
+===========================================
+Rows used after cleaning/deduplication: 100872
+Original labels: 0=phishing, 1=legitimate; model positive class: phishing
+Split method: StratifiedGroupKFold using hostname groups (same host kept in one split)
+Train/validation/test sizes: 64558/16140/20174
+
+XGBOOST ENHANCED - HELD-OUT TEST RESULTS
+Accuracy: 0.993953
+Phishing precision: 0.991327
+Phishing recall: 0.999134
+Phishing F1: 0.995215
+ROC-AUC: 0.999852
+MCC: 0.987057
+TN=7365, FP=111, FN=11, TP=12687
+
+FEATURE ABLATION - HELD-OUT TEST
+Original-feature XGBoost F1: 0.995254
+Enhanced-feature XGBoost F1: 0.995176
+F1 change (enhanced - original): -0.000078
+
+Important: these are measured results from this run, not promised scores.
+A positive ablation delta supports the added features on this split; a zero/negative delta does not support a performance-improvement claim.
+Brand-related features use a small heuristic brand seed list and require broader validation before publication.
